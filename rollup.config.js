@@ -15,6 +15,12 @@ export default {
       format: 'esm',
       sourcemap: true,
     },
+    {
+      file: 'dist/index.js',
+      format: 'cjs',
+      exports: 'named',
+      sourcemap: true,
+    },
   ],
   plugins: [
     typescript(),

@@ -16,3 +16,4 @@ export async function compress(
 }
 
 export * from './types';
+export { nodeCompress } from './utils/nodeCompress';
