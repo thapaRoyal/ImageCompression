@@ -1,0 +1,2 @@
+!function(e){"function"==typeof define&&define.amd?define(e):e()}(function(){"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.compress=function(r,i){return e.__awaiter(this,void 0,void 0,function*(){return(0,t.compressImage)(r,i)})};const e=require("tslib"),t=require("./utils/compressImage");e.__exportStar(require("./types"),exports)});
+//# sourceMappingURL=image-compression.umd.js.map
