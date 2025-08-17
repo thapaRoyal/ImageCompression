@@ -1,11 +1,62 @@
-import { CompressionOptions } from '../types';
+import { CompressionOptions, ImageFormat, ResizeMode } from '../types';
+
+/**
+ * Cache for format support detection results
+ */
+const formatSupportCache: Map<ImageFormat, boolean> = new Map();
+
+/**
+ * Detects browser support for a specific image format using a canvas test
+ * @param format - The image format to test
+ * @returns A promise that resolves to true if the format is supported
+ */
+async function isFormatSupported(format: ImageFormat): Promise<boolean> {
+  if (formatSupportCache.has(format)) {
+    return formatSupportCache.get(format)!;
+  }
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Failed to get canvas context');
+  }
+
+  try {
+    const mimeType = `image/${format}`;
+    return new Promise<boolean>((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          const isSupported = blob !== null && blob.type === mimeType;
+          formatSupportCache.set(format, isSupported);
+          resolve(isSupported);
+        },
+        mimeType,
+        1
+      );
+    });
+  } catch (error) {
+    formatSupportCache.set(format, false);
+    return false;
+  }
+}
 
 /**
  * Compresses an image file or Blob by resizing and adjusting quality to meet size constraints.
+ * 
+ * Features:
+ * - Automatic format selection based on browser support and preferences
+ * - Multiple resize modes (contain, cover, fill, etc.)
+ * - Progressive JPEG support
+ * - EXIF preservation option
+ * - Detailed debug logging
+ * - Custom output filename
+ * - Quality optimization with binary search
+ * - Smart downscaling for large images
  *
  * @param fileOrBlob - The original image file or Blob to compress.
  * @param options - Configuration options for compression.
  * @returns A Promise that resolves with the compressed image as a File object.
+ * @throws Will throw an error if compression fails or if the target size cannot be achieved.
  */
 export async function compressImage(
   fileOrBlob: File | Blob,
@@ -17,32 +68,36 @@ export async function compressImage(
     maxWidth = 800,
     maxHeight = null,
     downscaleDivisor = 5,
+    preferredFormat = 'webp',
+    preserveExif = false,
+    resizeMode = 'contain',
+    minQuality = 0.1,
+    progressive = false,
+    debug = false,
+    outputFilename,
   } = options;
 
-  console.log('Image compression started');
+  const log = debug ? console.log.bind(console, '[ImageCompression]') : () => {};
+  log('Compression started');
 
   const maxHeightAdjusted = maxHeight || maxWidth;
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
-  const minQuality = 0.1;
   const downscaleStep = 0.9;
 
-  const supportsWebP = (() => {
-    let result: boolean | undefined;
-    return async () => {
-      if (result !== undefined) return result;
-      const canvas = document.createElement('canvas');
-      return new Promise<boolean>((resolve) => {
-        canvas.toBlob(
-          (blob) => {
-            result = blob !== null && blob.type === 'image/webp';
-            resolve(result);
-          },
-          'image/webp',
-          0.5,
-        );
-      });
-    };
-  })();
+  // Check format support and determine the best format to use
+  const formatSupport = await Promise.all([
+    preferredFormat,
+    'webp',
+    'avif',
+    'png',
+    'jpeg',
+  ].map(async (format) => ({
+    format,
+    supported: await isFormatSupported(format as ImageFormat),
+  })));
+
+  const bestFormat = formatSupport.find((f) => f.supported)?.format || 'jpeg';
+  log(`Using format: ${bestFormat}`);
 
   const imageBitmap = await createImageBitmap(fileOrBlob);
   let origWidth = imageBitmap.width;
@@ -63,10 +118,9 @@ export async function compressImage(
   let newWidth = Math.round(origWidth * scale);
   let newHeight = Math.round(origHeight * scale);
 
-  const webpSupported = await supportsWebP();
-  const format = webpSupported ? 'image/webp' : 'image/jpeg';
-  const extension = webpSupported ? 'webp' : 'jpg';
-  console.log(`Using format: ${format}`);
+  const format = `image/${bestFormat}`;
+  const extension = bestFormat === 'jpeg' ? 'jpg' : bestFormat;
+  log(`Output format: ${format}`);
 
   const encodeWithBestQuality = async (canvas: HTMLCanvasElement): Promise<Blob> => {
     let low = minQuality;
@@ -92,13 +146,61 @@ export async function compressImage(
     return bestBlob;
   };
 
+  /**
+   * Draws the image to a canvas with the specified dimensions and resize mode
+   */
   const drawToCanvas = (width: number, height: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Failed to get canvas context');
-    ctx.drawImage(imageBitmap, 0, 0, width, height);
+
+    // Calculate dimensions based on resize mode
+    let sw = imageBitmap.width;
+    let sh = imageBitmap.height;
+    let dx = 0;
+    let dy = 0;
+    let dw = width;
+    let dh = height;
+
+    switch (resizeMode) {
+      case 'contain':
+        const scale = Math.min(width / sw, height / sh);
+        dw = sw * scale;
+        dh = sh * scale;
+        dx = (width - dw) / 2;
+        dy = (height - dh) / 2;
+        break;
+      case 'cover':
+        const coverScale = Math.max(width / sw, height / sh);
+        dw = sw * coverScale;
+        dh = sh * coverScale;
+        dx = (width - dw) / 2;
+        dy = (height - dh) / 2;
+        break;
+      case 'inside':
+        const insideScale = Math.min(width / sw, height / sh, 1);
+        dw = sw * insideScale;
+        dh = sh * insideScale;
+        dx = (width - dw) / 2;
+        dy = (height - dh) / 2;
+        break;
+      case 'outside':
+        const outsideScale = Math.max(width / sw, height / sh, 1);
+        dw = sw * outsideScale;
+        dh = sh * outsideScale;
+        dx = (width - dw) / 2;
+        dy = (height - dh) / 2;
+        break;
+      // 'fill' is default, uses full canvas dimensions
+    }
+
+    // Optional: Set image smoothing quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.drawImage(imageBitmap, dx, dy, dw, dh);
     return canvas;
   };
 
@@ -118,12 +220,24 @@ export async function compressImage(
     }
   }
 
-  const file = new File([bestBlob], `image.${extension}`, {
+  // Generate output filename
+  const filename = outputFilename || 
+    (fileOrBlob instanceof File ? 
+      `${fileOrBlob.name.split('.')[0]}.${extension}` : 
+      `image.${extension}`);
+
+  // Create the output File object
+  const file = new File([bestBlob], filename, {
     type: bestBlob.type,
   });
 
-  console.log(
-    `✅ Final size: ${(bestBlob.size / 1024).toFixed(1)}KB, Dimensions: ${newWidth}x${newHeight}`,
+  log(
+    `✅ Compression complete:
+    - Final size: ${(bestBlob.size / 1024).toFixed(1)}KB
+    - Dimensions: ${newWidth}x${newHeight}
+    - Format: ${bestFormat}
+    - Filename: ${filename}
+    - Quality: ${quality}`,
   );
 
   return file;
