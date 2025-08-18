@@ -1,7 +1,7 @@
 
 #  Image Compression (Browser & CDN Only)
 
-An , production-ready image compression library for JavaScript and TypeScript, designed for browser and CDN usage. No Node.js/Sharp dependency. Offers extensive configuration, automatic format selection, and high-quality compression.
+image compression library for JavaScript and TypeScript, designed for browser and CDN usage. Offers extensive configuration, automatic format selection, and high-quality compression.
 
 ## Features
 
