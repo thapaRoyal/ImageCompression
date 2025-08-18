@@ -1,7 +1,4 @@
-
-import { compressImage } from './utils/compressImage';
 import { CompressionOptions } from './types';
-
 /**
  * Main function to compress an image file or Blob (browser only).
  *
@@ -9,11 +6,5 @@ import { CompressionOptions } from './types';
  * @param options - Configuration options for compression.
  * @returns A Promise that resolves with the compressed image as a File object.
  */
-export async function compress(
-  fileOrBlob: File | Blob,
-  options: CompressionOptions
-): Promise<File> {
-  return compressImage(fileOrBlob, options);
-}
-
+export declare function compress(fileOrBlob: File | Blob, options: CompressionOptions): Promise<File>;
 export * from './types';

@@ -1,8 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { compress } from '../src';
-import { nodeCompress } from '../src/utils/nodeCompress';
-import { CompressionOptions, NodeCompressionOptions } from '../src/types';
+import { CompressionOptions } from '../src/types';
 
 describe('Image Compression', () => {
   describe('Browser Compression', () => {
@@ -58,61 +57,5 @@ describe('Image Compression', () => {
     });
   });
 
-  describe('Node.js Compression', () => {
-    const testImagePath = join(__dirname, '../test-assets/test-image.jpg');
-    let testImageBuffer: Buffer;
-
-    beforeAll(() => {
-      testImageBuffer = readFileSync(testImagePath);
-    });
-
-    it('should compress an image buffer with default options', async () => {
-      const options: NodeCompressionOptions = {
-        maxSizeMB: 0.1,
-        preferredFormat: 'webp',
-      };
-
-      const compressedBuffer = await nodeCompress(testImageBuffer, options);
-      expect(compressedBuffer.length).toBeLessThanOrEqual(options.maxSizeMB! * 1024 * 1024);
-    });
-
-    it('should support advanced Sharp options', async () => {
-      const options: NodeCompressionOptions = {
-        maxSizeMB: 0.1,
-        preferredFormat: 'webp',
-        sharp: {
-          sharpen: true,
-          preprocessing: {
-            normalize: true,
-          },
-          webp: {
-            lossless: true,
-          },
-        },
-      };
-
-      const compressedBuffer = await nodeCompress(testImageBuffer, options);
-      expect(compressedBuffer.length).toBeLessThanOrEqual(options.maxSizeMB! * 1024 * 1024);
-    });
-
-    it('should handle metadata preservation', async () => {
-      const options: NodeCompressionOptions = {
-        maxSizeMB: 0.1,
-        preserveExif: true,
-        preferredFormat: 'jpeg',
-      };
-
-      const compressedBuffer = await nodeCompress(testImageBuffer, options);
-      expect(compressedBuffer.length).toBeLessThanOrEqual(options.maxSizeMB! * 1024 * 1024);
-    });
-
-    it('should throw error for unsupported format', async () => {
-      const options: NodeCompressionOptions = {
-        maxSizeMB: 0.1,
-        preferredFormat: 'unsupported' as any,
-      };
-
-      await expect(nodeCompress(testImageBuffer, options)).rejects.toThrow();
-    });
-  });
+  // Node.js compression tests removed. This file now only tests browser compression.
 });

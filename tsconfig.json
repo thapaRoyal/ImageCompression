@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "NodeNext",
+    "module": "ESNext",                 // Rollup expects ESM input
+    "moduleResolution": "Node",         // simpler + works with Rollup
     "outDir": "dist",
     "strict": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,        // ✅ only generate .d.ts
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "nodenext"
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*"]
 }

@@ -1,2 +1,0 @@
-"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.nodeCompress=void 0,exports.compress=function(s,o){return e.__awaiter(this,void 0,void 0,function*(){return(0,r.compressImage)(s,o)})};const e=require("tslib"),r=require("./utils/compressImage");e.__exportStar(require("./types"),exports);var s=require("./utils/nodeCompress");Object.defineProperty(exports,"nodeCompress",{enumerable:!0,get:function(){return s.nodeCompress}});
-//# sourceMappingURL=index.js.map

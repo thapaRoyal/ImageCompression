@@ -52,6 +52,7 @@ async function isFormatSupported(format: ImageFormat): Promise<boolean> {
  * - Custom output filename
  * - Quality optimization with binary search
  * - Smart downscaling for large images
+ * - Browser-only implementation (no Node.js/Sharp)
  *
  * @param fileOrBlob - The original image file or Blob to compress.
  * @param options - Configuration options for compression.

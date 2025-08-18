@@ -1,42 +1,22 @@
-# Advanced Image Compression
 
-A powerful and flexible image compression library for JavaScript and TypeScript that provides comprehensive image processing capabilities for both browser and Node.js environments. This production-ready library offers advanced features, extensive customization options, and optimal compression while maintaining image quality.
+#  Image Compression (Browser & CDN Only)
 
-## Key Featuresge Compression
-
-Image compression library for JavaScript and TypeScript. This library supports both browser and Node.js environments, providing efficient image compression with customizable options.
+An , production-ready image compression library for JavaScript and TypeScript, designed for browser and CDN usage. No Node.js/Sharp dependency. Offers extensive configuration, automatic format selection, and high-quality compression.
 
 ## Features
 
-### Browser Support
-- Multiple output formats (WebP, JPEG, PNG, AVIF) with automatic format selection
+- Multiple output formats: WebP, JPEG, PNG, AVIF (auto-detects browser support)
 - Five resize modes: contain, cover, fill, inside, outside
 - Progressive JPEG support
 - EXIF metadata preservation option
 - Smart quality optimization using binary search
 - Automatic downscaling for large images
 - High-quality image rendering with smoothing
-
-### Node.js Support
-- Advanced image processing using Sharp
-- Additional format support (WebP, AVIF, PNG, JPEG)
-- Image enhancement options:
-  - Sharpening
-  - Brightness adjustment
-  - Contrast adjustment
-  - Normalization
-  - Median filtering
-- Format-specific optimizations for WebP and AVIF
-- Metadata control (preservation/stripping)
-- Detailed debug logging
-
-### General Features
 - TypeScript support with comprehensive type definitions
 - Flexible configuration options
 - Custom output filenames
 - Automatic format fallbacks
-- Detailed progress logging
-- Error handling and validation
+- Detailed progress logging and error handling
 
 ## Installation
 
@@ -44,17 +24,21 @@ Image compression library for JavaScript and TypeScript. This library supports b
 npm install @thaparoyal/image-compression
 ```
 
-### Dependencies
 
-- For browser usage: No additional dependencies required
-- For Node.js usage: Requires `sharp` (automatically installed as a dependency)
 
-## Quick Start
+## CDN Usage
 
-### Browser Usage
+Use the CDN build for browser:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@thaparoyal/image-compression/dist/image-compression.umd.js"></script>
+```
+
+After including the script, you can use the library as a UMD module:
 
 ```javascript
-import { compress } from '@thaparoyal/image-compression';
+// If using a bundler or module loader (like RequireJS, SystemJS, etc.)
+const { compress } = ImageCompression;
 
 // Basic compression
 const file = document.querySelector('input[type="file"]').files[0];
@@ -64,7 +48,7 @@ const compressedFile = await compress(file, {
   preferredFormat: 'webp'  // preferred output format
 });
 
-// Advanced compression with options
+// Advanced compression with all options
 const compressedFile = await compress(file, {
   maxSizeMB: 0.5,
   maxWidth: 1920,
@@ -74,43 +58,16 @@ const compressedFile = await compress(file, {
   resizeMode: 'cover',
   preserveExif: true,
   progressive: true,
-  debug: true
+  debug: true,
+  outputFilename: 'compressed-image.webp',
+  downscaleDivisor: 4,
+  minQuality: 0.2,
 });
 ```
 
-### Node.js Example
 
-```typescript
-import { nodeCompress } from 'image-compression/src/utils/nodeCompress';
-import fs from 'fs';
 
-const inputPath = 'input.jpg';
-const outputPath = 'output.jpg';
-
-const fileBuffer = fs.readFileSync(inputPath);
-
-const options = {
-  maxSizeMB: 0.1,
-  quality: 80,
-  maxWidth: 800,
-  maxHeight: 600,
-};
-
-nodeCompress(fileBuffer, options)
-  .then((compressedBuffer) => {
-    fs.writeFileSync(outputPath, compressedBuffer);
-    console.log('Image compressed successfully');
-  })
-  .catch((error) => {
-    console.error('Compression failed:', error);
-  });
-```
-
-### CDN Usage
-
-You can also use this library via a CDN. The UMD build is available for use in browsers.
-
-#### Example
+## CDN Example
 
 ```html
 <!DOCTYPE html>
@@ -126,15 +83,19 @@ You can also use this library via a CDN. The UMD build is available for use in b
   <script>
     document.getElementById('fileInput').addEventListener('change', async (event) => {
       const file = event.target.files[0];
-
       const options = {
         maxSizeMB: 0.1,
         quality: 0.9,
         maxWidth: 800,
         maxHeight: 600,
+        resizeMode: 'contain',
+        preserveExif: false,
+        progressive: false,
+        debug: true,
+        outputFilename: 'output.webp',
       };
-
       try {
+        // Use as UMD module
         const compressedFile = await ImageCompression.compress(file, options);
         console.log('Compressed file:', compressedFile);
       } catch (error) {
@@ -146,80 +107,84 @@ You can also use this library via a CDN. The UMD build is available for use in b
 </html>
 ```
 
-### CDN Link
-
-Use the following link to include the library via CDN:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@thaparoyal/image-compression/dist/image-compression.umd.js"></script>
-```
-
 ## API Reference
 
-### Browser API
+### `compress(fileOrBlob: File | Blob, options: CompressionOptions): Promise<File>`
 
-#### `compress(fileOrBlob: File | Blob, options: CompressionOptions): Promise<File>`
+Compresses an image in the browser with  options.
 
-Compresses an image in the browser environment with advanced options.
+#### `CompressionOptions`
 
 ```typescript
 interface CompressionOptions {
-  // Basic Options
   maxSizeMB?: number;        // Target maximum size in megabytes (default: 0.1)
   quality?: number;          // Starting compression quality 0-1 (default: 0.9)
   maxWidth?: number;         // Maximum width in pixels (default: 800)
   maxHeight?: number | null; // Maximum height in pixels (default: null)
-  
-  // Advanced Options
   preferredFormat?: 'webp' | 'jpeg' | 'png' | 'avif';  // Preferred output format (default: 'webp')
   preserveExif?: boolean;    // Preserve EXIF metadata (default: false)
   resizeMode?: 'contain' | 'cover' | 'fill' | 'inside' | 'outside';  // Resize mode (default: 'contain')
   minQuality?: number;       // Minimum allowed quality (default: 0.1)
   progressive?: boolean;     // Enable progressive JPEG (default: false)
-  debug?: boolean;          // Enable debug logging (default: false)
-  outputFilename?: string;  // Custom output filename
+  debug?: boolean;           // Enable debug logging (default: false)
+  outputFilename?: string;   // Custom output filename
   downscaleDivisor?: number; // Divisor for initial downscaling (default: 5)
 }
 ```
 
-### Node.js API
+###  Usage Examples
 
-#### `nodeCompress(fileBuffer: Buffer, options: NodeCompressionOptions): Promise<Buffer>`
+#### Example: Custom Resize Mode
 
-Compresses and processes an image in the Node.js environment using Sharp.
+```javascript
+const compressedFile = await compress(file, {
+  maxSizeMB: 0.2,
+  maxWidth: 1024,
+  maxHeight: 768,
+  resizeMode: 'cover',
+});
+```
 
-```typescript
-interface NodeCompressionOptions extends CompressionOptions {
-  sharp?: {
-    // Image Enhancement
-    sharpen?: boolean;      // Apply sharpening (default: false)
-    stripMetadata?: boolean; // Remove metadata (default: true)
-    
-    // WebP Options
-    webp?: {
-      lossless?: boolean;
-      nearLossless?: boolean;
-      smartSubsample?: boolean;
-    };
-    
-    // AVIF Options
-    avif?: {
-      lossless?: boolean;
-      speed?: number;
-    };
-    
-    // Preprocessing Options
-    preprocessing?: {
-      brightness?: number;  // Adjust brightness (0-100)
-      contrast?: number;    // Adjust contrast (0-100)
-      normalize?: boolean;  // Normalize contrast
-      median?: boolean;     // Apply median filter
-    };
-  };
-}
+#### Example: Progressive JPEG
 
-#### Returns
-A Promise that resolves with the compressed image as a Buffer.
+```javascript
+const compressedFile = await compress(file, {
+  preferredFormat: 'jpeg',
+  progressive: true,
+});
+```
+
+#### Example: Preserve EXIF Metadata
+
+```javascript
+const compressedFile = await compress(file, {
+  preserveExif: true,
+});
+```
+
+#### Example: Custom Output Filename
+
+```javascript
+const compressedFile = await compress(file, {
+  outputFilename: 'my-image.webp',
+});
+```
+
+#### Example: Debug Logging
+
+```javascript
+const compressedFile = await compress(file, {
+  debug: true,
+});
+```
+
+## How It Works
+
+- Uses browser canvas for resizing and format conversion
+- Automatically selects the best supported format
+- Optimizes quality using binary search to meet target size
+- Preserves EXIF metadata if requested
+- Supports all major browsers and CDN delivery
 
 ## License
 
