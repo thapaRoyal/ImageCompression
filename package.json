@@ -1,6 +1,6 @@
 {
   "name": "@thaparoyal/image-compression",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "description": "Browser image compression library for JavaScript and TypeScript.",
   
   "main": "dist/image-compression.cjs.js",       
