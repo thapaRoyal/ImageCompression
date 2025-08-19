@@ -1,6 +1,9 @@
 
 #  Image Compression (Browser & CDN Only)
-
+[![npm version](https://img.shields.io/npm/v/@thaparoyal/image-compression)](https://www.npmjs.com/package/@thaparoyal/image-compression)
+[![npm downloads](https://img.shields.io/npm/dw/@thaparoyal/image-compression)](https://www.npmjs.com/package/@thaparoyal/image-compression)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@thaparoyal/image-compression)](https://bundlephobia.com/package/@thaparoyal/image-compression)
+[![license](https://img.shields.io/npm/l/@thaparoyal/image-compression)](./LICENSE)
 image compression library for JavaScript and TypeScript, designed for browser and CDN usage. Offers extensive configuration, automatic format selection, and high-quality compression.
 
 ## Features
