@@ -97,7 +97,7 @@ export async function compressImage(
     supported: await isFormatSupported(format as ImageFormat),
   })));
 
-  const bestFormat = formatSupport.find((f) => f.supported)?.format || 'jpeg';
+  let bestFormat = formatSupport.find((f) => f.supported)?.format || 'jpeg';
   log(`Using format: ${bestFormat}`);
 
   const imageBitmap = await createImageBitmap(fileOrBlob);
@@ -119,11 +119,29 @@ export async function compressImage(
   let newWidth = Math.round(origWidth * scale);
   let newHeight = Math.round(origHeight * scale);
 
-  const format = `image/${bestFormat}`;
-  const extension = bestFormat === 'jpeg' ? 'jpg' : bestFormat;
+  // These will be updated if format changes during compression
+  let format = `image/${bestFormat}`;
+  let extension = bestFormat === 'jpeg' ? 'jpg' : bestFormat;
   log(`Output format: ${format}`);
 
   const encodeWithBestQuality = async (canvas: HTMLCanvasElement): Promise<Blob> => {
+    // For lossless formats (PNG), quality parameter has no effect
+    // So we encode directly without quality optimization
+    if (bestFormat === 'png') {
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, format)
+      );
+      if (!blob) throw new Error(`Compression failed for ${format}`);
+      
+      // If PNG is still too large, we need to resize further
+      if (blob.size > maxSizeBytes) {
+        throw new Error('PNG image too large - consider using a lossy format or reducing dimensions');
+      }
+      
+      return blob;
+    }
+
+    // For lossy formats (JPEG, WebP, AVIF), use quality optimization
     let low = minQuality;
     let high = quality;
     let bestBlob: Blob | null = null;
@@ -206,10 +224,47 @@ export async function compressImage(
   };
 
   let bestBlob: Blob | null = null;
+  let attempts = 0;
+  const maxAttempts = 3;
 
-  while (!bestBlob) {
-    const canvas = drawToCanvas(newWidth, newHeight);
-    bestBlob = await encodeWithBestQuality(canvas);
+  while (!bestBlob && attempts < maxAttempts) {
+    try {
+      const canvas = drawToCanvas(newWidth, newHeight);
+      bestBlob = await encodeWithBestQuality(canvas);
+    } catch (error) {
+      attempts++;
+      
+      // If PNG failed and we have other formats available, try a lossy format
+      if (bestFormat === 'png' && attempts === 1) {
+        const lossyFormat = formatSupport.find(f => 
+          f.supported && f.format !== 'png' && ['jpeg', 'webp', 'avif'].includes(f.format)
+        );
+        
+        if (lossyFormat) {
+          log(`PNG too large, falling back to ${lossyFormat.format}`);
+          // Update format and retry
+          const newFormat = lossyFormat.format as ImageFormat;
+          bestFormat = newFormat;
+          format = `image/${newFormat}`;
+          extension = newFormat === 'jpeg' ? 'jpg' : newFormat;
+          log(`Switched to format: ${format}`);
+          // Force a retry with the new format
+          continue;
+        }
+      }
+      
+      // If still failing, downscale and retry
+      if (attempts < maxAttempts) {
+        console.warn(
+          `Compression attempt ${attempts} failed, downscaling further`,
+        );
+        newWidth = Math.floor(newWidth * downscaleStep);
+        newHeight = Math.floor(newHeight * downscaleStep);
+        bestBlob = null;
+      } else {
+        throw error;
+      }
+    }
 
     if (!bestBlob || bestBlob.size > maxSizeBytes) {
       console.warn(
@@ -226,6 +281,11 @@ export async function compressImage(
     (fileOrBlob instanceof File ? 
       `${fileOrBlob.name.split('.')[0]}.${extension}` : 
       `image.${extension}`);
+
+  // Ensure we have a valid blob before creating the file
+  if (!bestBlob) {
+    throw new Error('Failed to compress image - no valid output generated');
+  }
 
   // Create the output File object
   const file = new File([bestBlob], filename, {

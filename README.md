@@ -34,7 +34,7 @@ npm install @thaparoyal/image-compression
 Use the CDN build for browser:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@thaparoyal/image-compression@1.1.13/dist/image-compression.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@thaparoyal/image-compression@1.1.15/dist/image-compression.umd.js"></script>
 ```
 
 After including the script, you can use the library as a UMD module:
@@ -81,7 +81,7 @@ Here's a complete example showing image compression with preview, size compariso
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Compression Demo</title>
-    <script src="https://cdn.jsdelivr.net/npm/@thaparoyal/image-compression@1.2.13/dist/image-compression.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@thaparoyal/image-compression@1.2.15/dist/image-compression.umd.js"></script>
     <style>
         body {
             max-width: 800px;
